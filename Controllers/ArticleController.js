@@ -1,13 +1,18 @@
 const { getDatabaseClient } = require("../Utils/dbConnection");
 const { handleError } = require("../Utils/utilMethods");
-const { validateString } = require("../Utils/validations");
+const { validateString, validateNumber } = require("../Utils/validations");
 const constants = require("../Config/constants");
 
 
 exports.fetchAllArticle = async (req, res) => {
     let client = getDatabaseClient();
     try {
-        let result = await client.query("select * from article");
+        if (validateNumber(Number(req.params.page_number))) {
+            handleError(res, constants.invalid_page_number);
+            return;
+        }
+        let number = (Number(req.params.page_number) - 1) * 5;
+        let result = await client.query(`select * from article order by article_id offset ${number} rows fetch first 5 rows only`);
         res.send(result.rows);
     } catch (err) {
         handleError(res, err.toString());
